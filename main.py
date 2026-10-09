@@ -3,10 +3,11 @@ from CTkToolTip import *
 from PIL import Image
 import os
 from threading import Thread
+from hPyT import *
 
 set_default_color_theme("assets/themes/red.json")
 
-class AboutWindow(CTkToplevel):
+class WindowAbout(CTkToplevel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -16,7 +17,36 @@ class AboutWindow(CTkToplevel):
         self.title("About")
         self.wm_attributes('-topmost', 'true')
 
-class MainWindow(CTk):
+class WindowHelp(CTkToplevel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Window properties
+        self.geometry(f"{640}x{240}")
+        self.resizable(False, False)
+        self.title("About")
+        self.wm_attributes('-topmost', 'true')
+
+class WindowDialogue(CTkToplevel):
+    def __init__(self,*args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Window properties
+        self.geometry(f"{320}x{160}")
+        self.resizable(False, False)
+        self.title("Dialogue")
+        self.wm_attributes('-topmost', 'true')
+        self.iconbitmap(r"assets\img\icon.ico")
+        maximize_minimize_button.hide(self)
+        self.grab_set()
+        self.focus()
+
+        self.label_message = CTkLabel(self, text="Message.")
+        self.label_message.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+
+    def configure(self, message="Message."):
+        self.label_message.configure(text=message)
+
+class WindowMain(CTk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -32,7 +62,9 @@ class MainWindow(CTk):
         self.log_entry_number = 0
 
         # Additional windows
-        self.about = None
+        #self.about = None
+        self.dialogue = None
+        self.help = None
 
         # Grid definitions
         self.grid_rowconfigure(0, weight=0)
@@ -56,7 +88,10 @@ class MainWindow(CTk):
 
         self.frame_output = CTkFrame(self.frame_main, border_width=2)
         self.frame_output.grid(row=2, column=0, padx=10, pady=(0, 10), sticky="nsew")
+        self.frame_output.grid_rowconfigure(0, weight=0)   
+        self.frame_output.grid_rowconfigure(1, weight=0)   
         self.frame_output.grid_columnconfigure(0, weight=1)       
+        self.frame_output.grid_columnconfigure(1, weight=1)   
 
         self.frame_scaling = CTkFrame(self.frame_main, border_width=2)
         self.frame_scaling.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="nsew")
@@ -66,10 +101,12 @@ class MainWindow(CTk):
         self.frame_about = CTkFrame(self.frame_main, border_width=2)
         self.frame_about.grid(row=0, column=1, padx=(0,10), pady=10, sticky="nsew", rowspan=3)
         self.frame_about.grid_columnconfigure(0, weight=1)
+        self.frame_about.grid_rowconfigure(0, weight=0)
+        self.frame_about.grid_rowconfigure(1, weight=0)
+        self.frame_about.grid_rowconfigure(2, weight=1)
+        self.frame_about.grid_rowconfigure(3, weight=0)
 
         # Elements
-        self.label_output = CTkLabel(self.frame_output, text="Output", font=("Arial", 16, "bold"))
-        self.label_output.grid(row=0, column=0, padx=20, pady=10, sticky="ew", columnspan=2)
 
         #self.window_label = CTkLabel(master=self, text="FSR Upscale GUI", font=("Ariel", 28))
         #self.window_label.grid(row=0, column=0, padx=10, pady=5, sticky="w", columnspan=2)
@@ -82,14 +119,11 @@ class MainWindow(CTk):
         self.label_about = CTkLabel(self.frame_about, text="About", font=("Arial", 16, "bold"))
         self.label_about.grid(row=1, column=0, padx=20, pady=(0, 10), sticky="ew")
 
-        self.label_about_text = CTkLabel(self.frame_about, justify="left", wraplength=300, text="GUI for FidelityFX-CLI what upscales images with AMD's FidelityFX Super Resolution (FSR) and Contrast Adaptive Sharpening (CAS) technologies.")
-        self.label_about_text.grid(row=2, column=0, padx=20, pady=(0, 10), sticky="w")
-
-        self.label_about_credits = CTkLabel(self.frame_about, justify="left", wraplength=300, text="FidelityFX-CLI: GPUOpen\nOriginal: SoyKhaler\nRework: Danizoar")
-        self.label_about_credits.grid(row=3, column=0, padx=20, pady=(0, 10), sticky="w")
+        self.label_about_text = CTkLabel(self.frame_about, justify="left", wraplength=300, text="GUI for FidelityFX-CLI what upscales images with AMD's FidelityFX Super Resolution (FSR) and Contrast Adaptive Sharpening (CAS) technologies.\n\nFidelityFX-CLI: GPUOpen\nOriginal: SoyKhaler\nRework: Danizoar")
+        self.label_about_text.grid(row=2, column=0, padx=20, pady=(0, 10), sticky="nw")
 
         self.label_about_version = CTkLabel(self.frame_about, justify="center", wraplength=300, text="Version 1.0")
-        self.label_about_version.grid(row=4, column=0, padx=20, pady=(0, 10), sticky="sew")
+        self.label_about_version.grid(row=3, column=0, padx=20, pady=(0, 10), sticky="sew")
 
         # File select
         self.label_file_select = CTkLabel(self.frame_file_select, text="File Select", font=("Arial", 16, "bold"))
@@ -111,9 +145,9 @@ class MainWindow(CTk):
         self.entry_file_path = CTkEntry(self.frame_file_select, width=512, placeholder_text=r"C:\..\..\file.png")
         self.entry_file_path.grid(row=4, column=0, padx=10, pady=(0,10), sticky="w")
 
-        self.button_open = CTkButton(self.frame_file_select, text="Open", width=48, command=self.select_onject)
+        self.button_open = CTkButton(self.frame_file_select, text="Open", width=48, command=self.select_object)
         self.button_open.grid(row=4, column=1, padx=(0,10), pady=(0,10), sticky="e")
-        self.button_open_tooltip = CTkToolTip(self.button_open, message="About this project")
+        #self.button_open_tooltip = CTkToolTip(self.button_open, message="a")
 
         # Image scaling
         self.label_scaling = CTkLabel(self.frame_scaling, text="Image Scaling", font=("Arial", 16, "bold"))
@@ -124,7 +158,7 @@ class MainWindow(CTk):
         self.frame_scaling_column_1.grid(row=1, column=0, pady=(0, 10), padx=10, sticky="new")
 
         self.frame_scaling_column_2 = CTkFrame(self.frame_scaling, fg_color="transparent")
-        self.frame_scaling_column_2.grid(row=1, column=1, pady=(0, 10), padx=10, sticky="new")
+        self.frame_scaling_column_2.grid(row=1, column=1, pady=(0, 10), padx=(0, 10), sticky="new")
 
         # Upscale amount
         self.label_amount = CTkLabel(self.frame_scaling_column_1, text="Select upscale amount:")
@@ -141,18 +175,19 @@ class MainWindow(CTk):
         self.entry_custom = CTkEntry(self.frame_scale, width=64, placeholder_text=r"0")
         self.entry_custom.grid(row=0, column=1, padx=(0, 10), pady=0, sticky="w")
 
-        self.checkbox_alpha = CTkCheckBox(self.frame_scaling_column_1, text="Preserve alpha", onvalue=True, offvalue=False, command=self.check_sharpness)
+        self.checkbox_alpha = CTkCheckBox(self.frame_scaling_column_1, text="Preserve alpha", onvalue=True, offvalue=False)
         self.checkbox_alpha.grid(row=2, column=0, pady=10, padx=0, sticky="w")
         self.checkbox_alpha_tooltip = CTkToolTip(self.checkbox_alpha, message="Preserve alpha channel of an image (increases processing time)")
 
         # Sharpening
-        self.checkbox_sharp = CTkCheckBox(self.frame_scaling_column_1, text="Use sharpening", onvalue=True, offvalue=False, command=self.check_sharpness)
+        self.checkbox_sharp = CTkCheckBox(self.frame_scaling_column_1, text="Use robust sharpening", onvalue=True, offvalue=False)
         self.checkbox_sharp.grid(row=3, column=0, pady=10, padx=0, sticky="w")
+        self.checkbox_sharp_tooltip = CTkToolTip(self.checkbox_sharp, message="Use RCAS for sharpening")
 
         self.frame_sharp = CTkFrame(self.frame_scaling_column_1, fg_color="transparent")
         self.frame_sharp.grid(row=4, column=0, pady=0, padx=0, sticky="ew")
 
-        self.slider_sharp = CTkSlider(self.frame_sharp, from_=0, to=100, command=self.slide_sharpness, number_of_steps=10, state=DISABLED)
+        self.slider_sharp = CTkSlider(self.frame_sharp, from_=0, to=100, command=self.slide_sharpness, number_of_steps=10)
         self.slider_sharp.set(20)
         self.slider_sharp.grid(row=0, column=0, pady=0, padx=(0, 10), sticky="w")
 
@@ -160,7 +195,7 @@ class MainWindow(CTk):
         self.label_sharp_amount.grid(row=0, column=1, pady=0, padx=0, sticky="w")
 
         # Downscaling
-        self.checkbox_downscaling = CTkCheckBox(self.frame_scaling_column_2, text="Downscale the output", onvalue=True, offvalue=False, command=self.check_sharpness)
+        self.checkbox_downscaling = CTkCheckBox(self.frame_scaling_column_2, text="Downscale the output", onvalue=True, offvalue=False)
         self.checkbox_downscaling.grid(row=0, column=0, pady=10, padx=0, sticky="w")
         self.checkbox_downscaling_tooltip = CTkToolTip(self.checkbox_downscaling, message="Downscale the upscaled image to remove upscaling artefacts")
 
@@ -184,11 +219,40 @@ class MainWindow(CTk):
         self.optionmenu_filter_pick = CTkOptionMenu(self.frame_scaling_column_2, values=["Nearest", "Box", "Bilenear", "Hamming", "Bicubic", "Lanczos"])
         self.optionmenu_filter_pick.grid(row=4, column=0, pady=(0, 10), padx=0, sticky="ew")
         self.optionmenu_filter_pick.set("Lanczos")
+        self.optionmenu_filter_pick_tooltip = CTkToolTip(self.optionmenu_filter_pick, justify="left", message="Nearest - low quality\nBox - moderate quality\nBilenear - moderate quality\nHamming - high quality\nBicubic - high quality\nLanczos - best quality")
 
         # Output
-        self.checkbox_save_extra = CTkCheckBox(self.frame_output, text="Save as a separate file", state=DISABLED)
-        self.checkbox_save_extra.grid(row=6, column=0, pady=(0,10), padx=10, sticky="w")
-        self.checkbox_save_extra_tooltip = CTkToolTip(self.checkbox_save_extra, message='Save sharpened version as a separate file with "_Sharp" on the end')
+        self.label_output = CTkLabel(self.frame_output, text="Output", font=("Arial", 16, "bold"))
+        self.label_output.grid(row=0, column=0, padx=20, pady=10, sticky="ew", columnspan=2)
+
+        self.checkbox_create_folder = CTkCheckBox(self.frame_output, text="Create new folder")
+        self.checkbox_create_folder.grid(row=1, column=0, pady=10, padx=10, sticky="w")
+        self.checkbox_create_folder_tooltip = CTkToolTip(self.checkbox_create_folder, message='For Folder input only')
+
+        self.checkbox_save_extra = CTkCheckBox(self.frame_output, text="Separate saved output")
+        self.checkbox_save_extra.grid(row=1, column=1, pady=10, padx=(20, 0), sticky="w")
+        self.checkbox_save_extra_tooltip = CTkToolTip(self.checkbox_save_extra, message='Saves files with "_upscaled", "_sharpened" and "_scaled" on the end')
+
+        self.frame_custom_folder = CTkFrame(self.frame_output, fg_color="transparent")
+        self.frame_custom_folder.grid(row=2, column=0, padx=10, pady=10, columnspan=2, sticky="ew")
+        self.frame_custom_folder.columnconfigure(0, weight=0)   
+        self.frame_custom_folder.columnconfigure(1, weight=1)
+        self.frame_custom_folder.columnconfigure(2, weight=0)
+
+        self.checkbox_custom_destination = CTkCheckBox(self.frame_custom_folder, text="Output folder")
+        self.checkbox_custom_destination.grid(row=0, column=0, pady=0, padx=(0, 10), sticky="w")
+        self.checkbox_custom_destination = CTkToolTip(self.checkbox_create_folder, message='For Folder input only')   
+
+        self.entry_custom_file_path = CTkEntry(self.frame_custom_folder, placeholder_text=r"C:\..\..\folder")
+        self.entry_custom_file_path.grid(row=0, column=1, padx=0, pady=0, sticky="ew")
+
+        self.button_open_custom = CTkButton(self.frame_custom_folder, text="Open", width=48, command=self.select_output_folder)
+        self.button_open_custom.grid(row=0, column=2, padx=(10, 0), pady=0, sticky="e")
+        #self.button_open_custom_tooltip = CTkToolTip(self.button_open, message="a")
+
+        #self.checkbox_save_extra = CTkCheckBox(self.frame_output, text="Save as a separate file")
+        #self.checkbox_save_extra.grid(row=6, column=0, pady=(0,10), padx=10, sticky="w")
+        #self.checkbox_save_extra_tooltip = CTkToolTip(self.checkbox_save_extra, message='Save sharpened version as a separate file with "_Sharp" on the end')
 
         # Console log
         self.frame_scrollable_log = CTkScrollableFrame(self.frame_main, fg_color=self._fg_color)
@@ -206,22 +270,26 @@ class MainWindow(CTk):
         self.frame_process.grid_rowconfigure(0, weight=1)
         self.frame_process.columnconfigure(0, weight=0)
         self.frame_process.columnconfigure(1, weight=0)
-        self.frame_process.columnconfigure(2, weight=1)
+        self.frame_process.columnconfigure(2, weight=0)
+        self.frame_process.columnconfigure(3, weight=1)
 
         self.button_start = CTkButton(self.frame_process, width=128, text="Start", command=self.on_start_press)
-        self.button_start.grid(row=2, column=0, padx=10, pady=(0, 10))
+        self.button_start.grid(row=0, column=0, padx=10, pady=(0, 10))
         self.button_start_tooltip = CTkToolTip(self.button_start, message="Start upscaling")
 
         self.progress_bar = CTkProgressBar(self.frame_process, orientation="horizontal", mode="determinate", width=256)
         self.progress_bar.set(1)
-        self.progress_bar.grid(row=2, column=1, padx=10, pady=(0, 10))
-        
-        self.button_about = CTkButton(self.frame_process, text="About", width=48, command=self.open_about)
-        self.button_about.grid(row=2, column=2, padx=10, pady=(0, 10), sticky="e")
-        self.button_about_tooltip = CTkToolTip(self.button_about, message="About this project")
+        self.progress_bar.grid(row=0, column=1, padx=10, pady=(0, 10))
+
+        self.label_progress = CTkLabel(self.frame_process, text="100%")
+        self.label_progress.grid(row=0, column=2, padx=0, pady=(0, 10), sticky="w")
+
+        self.button_help = CTkButton(self.frame_process, text="Help", width=48, command=self.open_help)
+        self.button_help.grid(row=0, column=3, padx=(0,10), pady=(0,10), sticky="e")
+        self.button_help_tooltip = CTkToolTip(self.button_help, message="Open Help")
 
         # Running functions
-        self.add_log_entry("FSR Image Upscaler \nVersion 1.0")
+        self.run_commands()
 
     def add_log_entry(self, input):
         input = str(input)
@@ -239,6 +307,8 @@ class MainWindow(CTk):
 
         print(input)
         self.log_entry_number+=1
+        self.update()
+        self.update_idletasks()
 
     def choose_type(self, value):
         self.entry_file_path.delete(0, 'end')
@@ -256,9 +326,9 @@ class MainWindow(CTk):
                 
         #self.add_log_entry("Switched file type to: "+value)
 
-    def select_onject(self):
+    def select_object(self):
         if self.button_seg_file_select.get() == "File":
-            filename = filedialog.askopenfilename()
+            filename = filedialog.askopenfilename(filetypes=[("Image files",".bmp .png .ico .jpg .tif .gif")])
         else:
             filename = filedialog.askdirectory()
 
@@ -272,13 +342,17 @@ class MainWindow(CTk):
         else:
             pass
 
-    def check_sharpness(self):
-        if self.checkbox_sharp.get():
-            self.slider_sharp.configure(state=NORMAL)
-            self.checkbox_save_extra.configure(state=NORMAL)
+    def select_output_folder(self):
+        filename = filedialog.askdirectory()
+        if filename != "":
+            self.entry_custom_file_path.delete(0, 'end')
+            self.entry_custom_file_path.insert(0, filename)
+            if self.button_seg_file_select.get() == "File":
+                self.file_filepath = filename
+            else:
+                self.folder_filepath = filename
         else:
-            self.slider_sharp.configure(state=DISABLED)
-            self.checkbox_save_extra.configure(state=DISABLED)
+            pass
 
     def slide_sharpness(self, value):
         if value<10:
@@ -286,18 +360,41 @@ class MainWindow(CTk):
             value = 10
         self.label_sharp_amount.configure(text=value/100)
 
-    def open_about(self):
-        if self.about is None or not self.about.winfo_exists():
-            self.about = AboutWindow(self)
+    def run_commands(self):
+            self.add_log_entry("FSR Image Upscaler \nVersion 1.0")
+
+    def open_help(self):
+        if self.help is None or not self.help.winfo_exists():
+            self.help = WindowHelp(self)
+            self.help.focus()
         else:
-            self.about.focus()
-    
+            self.help.focus()
+
+    def show_dialogue(self, message="message"):
+        if self.dialogue is None or not self.dialogue.winfo_exists():
+            self.dialogue = WindowDialogue(self)
+        else:
+            self.dialogue.focus()
+        self.dialogue.configure(message=message)
+
     def start(self):
         pass
 
     def on_start_press(self):
-        self.start()
+        #if self.entry_file_path.get() != "":
+        if self.button_seg_file_select.get() == "File":
+            if os.path.isfile(self.entry_file_path.get()):
+                print("exists")
+            else:
+                self.show_dialogue("File doesn't exist or no valid filepath provided.")
+        else:
+            if os.path.exists(self.entry_file_path.get()):
+                print("exists")
+            else:
+                print("no")
+
+        self.start()        
 
 if __name__ == '__main__':
-    App = MainWindow()
+    App = WindowMain()
     App.mainloop()
