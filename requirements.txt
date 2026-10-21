@@ -1,3 +1,4 @@
-python_version=="3.13.16"
-PySide6
-pyqtdarktheme-fork
+customtkinter
+CTkToolTip
+pillow
+hPyT
